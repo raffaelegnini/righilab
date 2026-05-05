@@ -250,20 +250,6 @@ export default function Upload() {
     setGenerationComplete(false);
     setGenerationError("");
 
-    // #region agent log
-    const tFE = Date.now();
-    const fl = (loc, msg, data) => {
-      try {
-        fetch("http://127.0.0.1:7531/ingest/bc6660d1-bf88-441c-9186-ea06321d5733", {
-          method: "POST",
-          headers: { "Content-Type": "application/json", "X-Debug-Session-Id": "82b54a" },
-          body: JSON.stringify({ sessionId: "82b54a", location: loc, message: msg, data, timestamp: Date.now() }),
-        }).catch(() => {});
-      } catch (_) {}
-    };
-    fl("upload/page.js:handleStartGeneration", "fetch start", { method: selectedMethod, items: lessonItems });
-    // #endregion
-
     try {
       let res;
       if (selectedMethod === "notes" && uploadedFiles.length > 0) {
@@ -279,25 +265,16 @@ export default function Upload() {
           body: JSON.stringify({ method: selectedMethod, items: lessonItems }),
         });
       }
-      // #region agent log
-      fl("upload/page.js:handleStartGeneration", "fetch resolved", { elapsedMs: Date.now() - tFE, status: res.status, ok: res.ok });
-      // #endregion
       if (!res.ok) {
         const data = await res.json().catch(() => ({}));
         throw new Error(data.error || `Errore ${res.status}. Riprova.`);
       }
       const lessonData = await res.json();
-      // #region agent log
-      fl("upload/page.js:handleStartGeneration", "json parsed", { elapsedMs: Date.now() - tFE, hasLesson: !!lessonData?.id });
-      // #endregion
       startTransition(() => {
         setLesson(lessonData);
         setGenerationComplete(true);
       });
     } catch (err) {
-      // #region agent log
-      fl("upload/page.js:handleStartGeneration", "fetch error", { elapsedMs: Date.now() - tFE, errMsg: String(err?.message || err).slice(0, 200) });
-      // #endregion
       const msg = err?.message || "Errore nella generazione. Riprova.";
       setGenerationError(msg);
       setIsGenerating(false);

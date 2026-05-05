@@ -9,18 +9,6 @@ import {
   TRANSCRIPT_ERROR,
 } from "@/lib/extractContent";
 
-// #region agent log
-function debugLog(location, message, data) {
-  try {
-    fetch("http://127.0.0.1:7531/ingest/bc6660d1-bf88-441c-9186-ea06321d5733", {
-      method: "POST",
-      headers: { "Content-Type": "application/json", "X-Debug-Session-Id": "82b54a" },
-      body: JSON.stringify({ sessionId: "82b54a", location, message, data, timestamp: Date.now() }),
-    }).catch(() => {});
-  } catch (_) {}
-}
-// #endregion
-
 /**
  * POST /api/generate-lesson
  *
@@ -35,19 +23,11 @@ function debugLog(location, message, data) {
  *   Il server estrae il testo dai file automaticamente.
  */
 export async function POST(request) {
-  // #region agent log
-  const tPostStart = Date.now();
-  const _t = () => Date.now() - tPostStart;
-  // #endregion
   try {
     const contentType = request.headers.get("content-type") || "";
     let method;
     let items;
     let rawContent = "";
-
-    // #region agent log
-    debugLog("route.js:POST", "entry", { contentType });
-    // #endregion
 
     if (contentType.includes("multipart/form-data")) {
       const formData = await request.formData();
@@ -71,13 +51,7 @@ export async function POST(request) {
         }
       }
       if (method === "video" && items.length > 0) {
-        // #region agent log
-        const tT = Date.now();
-        // #endregion
         rawContent = await extractTranscriptFromVideos(items);
-        // #region agent log
-        debugLog("route.js:POST", "transcript done (formdata)", { elapsedStepMs: Date.now() - tT, totalElapsedMs: _t(), rawLen: rawContent.length });
-        // #endregion
       }
     } else {
       const body = await request.json();
@@ -85,14 +59,7 @@ export async function POST(request) {
       items = body.items;
       rawContent = body.rawContent || "";
       if (method === "video" && items?.length > 0 && !rawContent?.trim()) {
-        // #region agent log
-        const tT = Date.now();
-        debugLog("route.js:POST", "transcript start", { items, totalElapsedMs: _t() });
-        // #endregion
         rawContent = await extractTranscriptFromVideos(items);
-        // #region agent log
-        debugLog("route.js:POST", "transcript done", { elapsedStepMs: Date.now() - tT, totalElapsedMs: _t(), rawLen: rawContent.length });
-        // #endregion
       }
     }
 
@@ -143,25 +110,12 @@ export async function POST(request) {
     });
 
     const inputType = method === "notes" ? "appunti" : method === "video" ? "youtube" : "argomento";
-    // #region agent log
-    const tL = Date.now();
-    debugLog("route.js:POST", "lesson start", { inputType, contentLen: extractedContent.length, totalElapsedMs: _t() });
-    // #endregion
     const lesson = await generateLesson(extractedContent, { method, items }, inputType);
-    // #region agent log
-    debugLog("route.js:POST", "lesson done", { elapsedStepMs: Date.now() - tL, totalElapsedMs: _t() });
-    // #endregion
     if (!lesson.id) {
       lesson.id = `lesson-${method}-${Date.now()}`;
     }
-    // #region agent log
-    debugLog("route.js:POST", "exit success", { totalElapsedMs: _t() });
-    // #endregion
     return NextResponse.json(lesson);
   } catch (err) {
-    // #region agent log
-    debugLog("route.js:POST", "exit error", { totalElapsedMs: _t(), errMsg: String(err?.message || err).slice(0, 200) });
-    // #endregion
     console.error("[generate-lesson]", err);
     let message = err?.message || "Errore nella generazione della lezione. Riprova.";
     if (err?.cause?.message) message = err.cause.message;
