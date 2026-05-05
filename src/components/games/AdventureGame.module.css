@@ -14,8 +14,11 @@
   flex-direction: column;
   align-items: center;
   width: 100%;
+  max-width: 100%;
   padding: 40px 20px;
   gap: 30px;
+  box-sizing: border-box;
+  overflow-x: hidden;
 }
 
 .flameBox {
@@ -32,24 +35,49 @@
 /* Griglia */
 .gridContainer {
   display: grid;
-  grid-template-columns: repeat(5, 80px);
-  grid-template-rows: repeat(6, 80px);
-  gap: 15px;
-  padding: 30px;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  grid-template-rows: repeat(6, 1fr);
+  gap: clamp(6px, 2vw, 15px);
+  padding: clamp(12px, 3vw, 30px);
   background-color: #ffffff;
-  border-radius: 30px;
+  border-radius: clamp(16px, 3vw, 30px);
   box-shadow: 0 15px 35px rgba(0, 0, 0, 0.1);
+  width: 100%;
+  max-width: 560px;
+  box-sizing: border-box;
 }
 
 .cell {
   background-color: #fcfcfc;
   border: 2px solid #edeff2;
-  border-radius: 18px;
+  border-radius: clamp(8px, 2vw, 18px);
   display: flex;
   align-items: center;
   justify-content: center;
   position: relative;
+  aspect-ratio: 1 / 1;
+  min-width: 0;
   transition: all 0.3s ease;
+}
+
+.cell :global(img) {
+  max-width: 100%;
+  height: auto;
+}
+
+.playerPawn,
+.flamePawn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  height: 100%;
+}
+
+.playerPawn :global(img) {
+  width: 90%;
+  height: 90%;
+  object-fit: contain;
 }
 
 .completed {
@@ -78,19 +106,22 @@
   display: flex;
   justify-content: space-between;
   width: 100%;
-  max-width: 460px;
+  max-width: 560px;
+  gap: 8px;
+  flex-wrap: wrap;
 }
 
 .statBox,
 .diceBox {
   background-color: #ffffff;
-  padding: 12px 20px;
+  padding: clamp(8px, 2vw, 12px) clamp(10px, 2.5vw, 20px);
   border-radius: 16px;
   border: 2px solid #e2e8f0;
   display: flex;
   flex-direction: column;
   align-items: center;
-  min-width: 120px;
+  flex: 1 1 0;
+  min-width: 0;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
   transition:
     border-color 0.2s ease,
@@ -171,6 +202,20 @@
   min-height: 3rem;
   letter-spacing: -0.02em;
   text-shadow: 0 2px 0 rgba(255, 255, 255, 0.9);
+  transition: color 0.25s ease, transform 0.25s ease;
+}
+
+.diceRollCardReveal {
+  border-color: #5eead4;
+  box-shadow:
+    0 22px 55px rgba(15, 86, 102, 0.4),
+    0 0 0 4px rgba(94, 234, 212, 0.35),
+    0 0 0 1px rgba(255, 255, 255, 0.6) inset;
+}
+
+.diceRollCardReveal .diceRollNumber {
+  font-size: 4rem;
+  color: #0f766e;
 }
 
 .diceRollTitle {
@@ -196,7 +241,7 @@
 }
 
 .value {
-  font-size: 24px;
+  font-size: clamp(18px, 4.5vw, 24px);
   font-weight: 900;
   color: #1e293b !important;
 }
@@ -243,9 +288,10 @@
 }
 
 .flamePawn {
-  font-size: 35px;
+  font-size: clamp(20px, 6vw, 35px);
   filter: drop-shadow(0 0 8px orange);
 }
+
 
 .loadingSection,
 .resultSection {
@@ -277,6 +323,8 @@
 
 .stepNumber {
   color: black;
+  font-size: clamp(13px, 3.2vw, 18px);
+  font-weight: 600;
 }
 
 /* Pulsante di attivazione */
@@ -338,7 +386,7 @@
 }
 
 .bonusIcon {
-  font-size: 32px;
+  font-size: clamp(18px, 5vw, 32px);
   animation: bounce 2s infinite;
 }
 
@@ -360,11 +408,13 @@
   background: rgba(15, 23, 42, 0.72);
   backdrop-filter: blur(8px);
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   justify-content: center;
-  padding: 20px;
+  padding: clamp(12px, 4vw, 24px);
   overflow-y: auto;
+  overscroll-behavior: contain;
   cursor: pointer;
+  -webkit-overflow-scrolling: touch;
 }
 
 .howToPanel {
@@ -380,6 +430,7 @@
   padding: 2rem 2rem 2.25rem;
   color: #134e5c;
   position: relative;
+  margin: auto;
 }
 
 .howToTitle {
@@ -523,9 +574,65 @@
 @media (max-width: 900px) {
   .howToGrid {
     grid-template-columns: 1fr;
+    gap: 0.85rem;
   }
 
   .howToPanel {
-    padding: 1.5rem 1.25rem 1.75rem;
+    padding: 1.25rem 1rem 1.5rem;
+  }
+
+  .howToTitle {
+    font-size: 1.25rem;
+  }
+
+  .howToSubtitle {
+    font-size: 0.85rem;
+    margin-bottom: 1rem;
+  }
+
+  .howToShot {
+    min-height: 110px;
+    aspect-ratio: 16 / 9;
+  }
+
+  .howToActions {
+    margin-top: 1.25rem;
+  }
+}
+
+@media (max-width: 600px) {
+  .boardSection {
+    padding: 20px 12px;
+    gap: 18px;
+  }
+
+  .gameHeader {
+    gap: 6px;
+  }
+
+  .label {
+    font-size: 10px;
+  }
+
+  .diceRollCard {
+    padding: 1.25rem 1.5rem;
+  }
+
+  .diceRollEmoji {
+    font-size: 2.75rem;
+  }
+
+  .diceRollNumber {
+    font-size: 2.25rem;
+    min-height: 2.25rem;
+  }
+
+  .diceRollCardReveal .diceRollNumber {
+    font-size: 3rem;
+  }
+
+  .openQuestionBtn {
+    padding: 0.85rem 1.5rem;
+    font-size: 0.95rem;
   }
 }

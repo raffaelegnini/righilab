@@ -99,6 +99,8 @@ export default function AdventureGame() {
   const [windowSize, setWindowSize] = useState({ width: 0, height: 0 });
   /** Numeri casuali veloci durante il lancio (feedback visivo). */
   const [rollingTease, setRollingTease] = useState(null);
+  /** Numero finale del dado mostrato per qualche secondo dopo il lancio. */
+  const [revealedRoll, setRevealedRoll] = useState(null);
 
   useEffect(() => {
     stepsRef.current = steps;
@@ -175,27 +177,34 @@ export default function AdventureGame() {
   const rollDice = useCallback(
     (onComplete) => {
       setIsRolling(true);
+      setRevealedRoll(null);
+      setDiceValue(null);
       setTimeout(() => {
         const roll = Math.floor(Math.random() * 6) + 1;
         setDiceValue(roll);
         setIsRolling(false);
+        setRevealedRoll(roll);
 
-        const prev = stepsRef.current;
-        const next = prev + roll;
-        stepsRef.current = next;
-        setSteps(next);
+        setTimeout(() => {
+          setRevealedRoll(null);
 
-        if (next >= 29) {
-          setPhase("win");
-          return;
-        }
+          const prev = stepsRef.current;
+          const next = prev + roll;
+          stepsRef.current = next;
+          setSteps(next);
 
-        if (bonusCells.includes(next)) {
-          setTimeout(() => rollDice(onComplete), 1000);
-          return;
-        }
+          if (next >= 29) {
+            setPhase("win");
+            return;
+          }
 
-        onComplete?.();
+          if (bonusCells.includes(next)) {
+            setTimeout(() => rollDice(onComplete), 600);
+            return;
+          }
+
+          onComplete?.();
+        }, 1400);
       }, 1000);
     },
     [bonusCells]
@@ -381,7 +390,7 @@ export default function AdventureGame() {
           </div>
 
           <AnimatePresence>
-            {isRolling && (
+            {(isRolling || revealedRoll != null) && (
               <motion.div
                 className={styles.diceRollOverlay}
                 initial={{ opacity: 0 }}
@@ -390,7 +399,7 @@ export default function AdventureGame() {
                 transition={{ duration: 0.15 }}
               >
                 <motion.div
-                  className={styles.diceRollCard}
+                  className={`${styles.diceRollCard} ${revealedRoll != null ? styles.diceRollCardReveal : ""}`}
                   initial={{ scale: 0.92, y: 12 }}
                   animate={{ scale: 1, y: 0 }}
                   exit={{ scale: 0.95, opacity: 0 }}
@@ -398,18 +407,28 @@ export default function AdventureGame() {
                   <motion.span
                     className={styles.diceRollEmoji}
                     aria-hidden
-                    animate={{ rotate: [0, -18, 18, -14, 14, 0], y: [0, -4, 0] }}
-                    transition={{ repeat: Infinity, duration: 0.45, ease: "easeInOut" }}
+                    animate={
+                      isRolling
+                        ? { rotate: [0, -18, 18, -14, 14, 0], y: [0, -4, 0] }
+                        : { rotate: 0, y: 0, scale: [1, 1.15, 1] }
+                    }
+                    transition={
+                      isRolling
+                        ? { repeat: Infinity, duration: 0.45, ease: "easeInOut" }
+                        : { duration: 0.5, ease: "easeOut" }
+                    }
                   >
                     🎲
                   </motion.span>
-                  {rollingTease != null && (
-                    <span className={styles.diceRollNumber} aria-live="polite">
-                      {rollingTease}
-                    </span>
-                  )}
-                  <p className={styles.diceRollTitle}>Lancio del dado</p>
-                  <p className={styles.diceRollHint}>Tra poco avanzerai sul tabellone</p>
+                  <span className={styles.diceRollNumber} aria-live="polite">
+                    {isRolling ? (rollingTease ?? "…") : revealedRoll}
+                  </span>
+                  <p className={styles.diceRollTitle}>
+                    {isRolling ? "Lancio del dado" : `Hai ottenuto +${revealedRoll}!`}
+                  </p>
+                  <p className={styles.diceRollHint}>
+                    {isRolling ? "Tra poco avanzerai sul tabellone" : "Avanzi sul tabellone…"}
+                  </p>
                 </motion.div>
               </motion.div>
             )}
@@ -446,7 +465,7 @@ export default function AdventureGame() {
 
           {/* PULSANTE PER APRIRE IL MODAL */}
           <div className={styles.actionArea}>
-            {!isRolling && questions[currentIndex] && !isModalOpen && (
+            {!isRolling && revealedRoll == null && questions[currentIndex] && !isModalOpen && (
               <button
                 className={styles.openQuestionBtn}
                 onClick={openQuestionModal}
